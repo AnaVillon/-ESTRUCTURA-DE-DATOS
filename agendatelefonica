@@ -1,0 +1,217 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <cctype>
+
+using namespace std;
+
+// REGISTRO / ESTRUCTURA
+struct Contacto {
+    string nombre;
+    string telefono;
+    string correo;
+};
+
+static string aMinusculas(string s) {
+    for (char &c : s) c = (char)tolower((unsigned char)c);
+    return s;
+}
+
+static bool empiezaConLetra(const string& nombre, char letraMayus) {
+    if (nombre.empty()) return false;
+    char c = (char)toupper((unsigned char)nombre[0]);
+    return c == letraMayus;
+}
+
+static int indiceLetra(const string& nombre) {
+    if (nombre.empty()) return 25; // cae en Z por defecto
+    char c = (char)toupper((unsigned char)nombre[0]);
+    if (c < 'A' || c > 'Z') return 25;
+    return c - 'A';
+}
+
+// POO
+class Agenda {
+private:
+    // VECTOR (estructura principal)
+    vector<Contacto> contactos;
+
+    // MATRIZ 26 x N (índices por letra) -> matriz de "listas" por inicial
+    // Cada fila tiene posiciones (índices) hacia el vector "contactos"
+    vector<vector<int>> indicePorInicial; // 26 filas
+
+    void reconstruirIndice() {
+        indicePorInicial.assign(26, {});
+        for (int i = 0; i < (int)contactos.size(); i++) {
+            int idx = indiceLetra(contactos[i].nombre);
+            indicePorInicial[idx].push_back(i);
+        }
+    }
+
+public:
+    Agenda() : indicePorInicial(26) {}
+
+    void agregarContacto(const Contacto& c) {
+        contactos.push_back(c);
+        reconstruirIndice();
+    }
+
+    bool eliminarPorNombre(const string& nombre) {
+        string n = aMinusculas(nombre);
+        auto it = remove_if(contactos.begin(), contactos.end(), [&](const Contacto& x){
+            return aMinusculas(x.nombre) == n;
+        });
+        if (it == contactos.end()) return false;
+        contactos.erase(it, contactos.end());
+        reconstruirIndice();
+        return true;
+    }
+
+    // Reportería: listar todo
+    void listar() const {
+        if (contactos.empty()) {
+            cout << "Agenda vacia.\n";
+            return;
+        }
+        cout << "---- LISTA DE CONTACTOS (" << contactos.size() << ") ----\n";
+        for (const auto& c : contactos) {
+            cout << "- " << c.nombre << " | Tel: " << c.telefono << " | Correo: " << c.correo << "\n";
+        }
+    }
+
+    // Reportería: listar por inicial usando la "matriz"
+    void listarPorInicial(char letra) const {
+        char L = (char)toupper((unsigned char)letra);
+        if (L < 'A' || L > 'Z') {
+            cout << "Inicial invalida.\n";
+            return;
+        }
+        int idx = L - 'A';
+        cout << "---- CONTACTOS CON INICIAL " << L << " ----\n";
+        if (indicePorInicial[idx].empty()) {
+            cout << "No hay contactos con esa inicial.\n";
+            return;
+        }
+        for (int pos : indicePorInicial[idx]) {
+            const auto& c = contactos[pos];
+            cout << "- " << c.nombre << " | Tel: " << c.telefono << " | Correo: " << c.correo << "\n";
+        }
+    }
+
+    // Consultar: buscar por nombre (exacto)
+    bool consultarPorNombre(const string& nombre, Contacto& salida) const {
+        string n = aMinusculas(nombre);
+        for (const auto& c : contactos) {
+            if (aMinusculas(c.nombre) == n) {
+                salida = c;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Consultar: buscar por coincidencia parcial
+    vector<Contacto> buscarPorCoincidencia(const string& texto) const {
+        vector<Contacto> res;
+        string t = aMinusculas(texto);
+        for (const auto& c : contactos) {
+            if (aMinusculas(c.nombre).find(t) != string::npos) res.push_back(c);
+        }
+        return res;
+    }
+
+    // Ordenar (opcional)
+    void ordenarPorNombre() {
+        sort(contactos.begin(), contactos.end(), [](const Contacto& a, const Contacto& b){
+            return aMinusculas(a.nombre) < aMinusculas(b.nombre);
+        });
+        reconstruirIndice();
+    }
+};
+
+static void menu() {
+    cout << "\n===== AGENDA TELEFONICA =====\n";
+    cout << "1) Agregar contacto\n";
+    cout << "2) Listar todos\n";
+    cout << "3) Consultar por nombre (exacto)\n";
+    cout << "4) Buscar por coincidencia\n";
+    cout << "5) Listar por inicial (A-Z)\n";
+    cout << "6) Eliminar por nombre\n";
+    cout << "7) Ordenar por nombre\n";
+    cout << "0) Salir\n";
+    cout << "Seleccione: ";
+}
+
+int main() {
+    Agenda agenda;
+    int op = -1;
+
+    while (op != 0) {
+        menu();
+        cin >> op;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        if (op == 1) {
+            Contacto c;
+            cout << "Nombre: ";
+            getline(cin, c.nombre);
+            cout << "Telefono: ";
+            getline(cin, c.telefono);
+            cout << "Correo: ";
+            getline(cin, c.correo);
+            agenda.agregarContacto(c);
+            cout << "Contacto agregado.\n";
+
+        } else if (op == 2) {
+            agenda.listar();
+
+        } else if (op == 3) {
+            string nombre;
+            cout << "Ingrese nombre exacto: ";
+            getline(cin, nombre);
+            Contacto c;
+            if (agenda.consultarPorNombre(nombre, c)) {
+                cout << "ENCONTRADO:\n";
+                cout << "Nombre: " << c.nombre << "\nTelefono: " << c.telefono << "\nCorreo: " << c.correo << "\n";
+            } else {
+                cout << "No encontrado.\n";
+            }
+
+        } else if (op == 4) {
+            string texto;
+            cout << "Ingrese texto a buscar: ";
+            getline(cin, texto);
+            auto res = agenda.buscarPorCoincidencia(texto);
+            cout << "Coincidencias: " << res.size() << "\n";
+            for (const auto& c : res) {
+                cout << "- " << c.nombre << " | " << c.telefono << " | " << c.correo << "\n";
+            }
+
+        } else if (op == 5) {
+            char letra;
+            cout << "Inicial (A-Z): ";
+            cin >> letra;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            agenda.listarPorInicial(letra);
+
+        } else if (op == 6) {
+            string nombre;
+            cout << "Nombre exacto a eliminar: ";
+            getline(cin, nombre);
+            if (agenda.eliminarPorNombre(nombre)) cout << "Eliminado.\n";
+            else cout << "No se encontro ese contacto.\n";
+
+        } else if (op == 7) {
+            agenda.ordenarPorNombre();
+            cout << "Agenda ordenada por nombre.\n";
+
+        } else if (op == 0) {
+            cout << "Saliendo...\n";
+        } else {
+            cout << "Opcion invalida.\n";
+        }
+    }
+
+    return 0;
+}
