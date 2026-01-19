@@ -1,0 +1,136 @@
+using System;
+
+namespace ListaEnlazadaRango
+{
+    class Nodo
+    {
+        public int Dato;
+        public Nodo Siguiente;
+
+        public Nodo(int dato)
+        {
+            Dato = dato;
+            Siguiente = null;
+        }
+    }
+
+    class ListaEnlazada
+    {
+        private Nodo cabeza;
+
+        public void AgregarFinal(int dato)
+        {
+            Nodo nuevo = new Nodo(dato);
+
+            if (cabeza == null)
+            {
+                cabeza = nuevo;
+                return;
+            }
+
+            Nodo actual = cabeza;
+            while (actual.Siguiente != null)
+                actual = actual.Siguiente;
+
+            actual.Siguiente = nuevo;
+        }
+
+        public void Mostrar(string titulo)
+        {
+            Console.WriteLine(titulo);
+            if (cabeza == null)
+            {
+                Console.WriteLine("(lista vacía)\n");
+                return;
+            }
+
+            Nodo actual = cabeza;
+            while (actual != null)
+            {
+                Console.Write(actual.Dato + (actual.Siguiente != null ? " -> " : ""));
+                actual = actual.Siguiente;
+            }
+            Console.WriteLine("\n");
+        }
+
+        // Elimina nodos cuyo valor esté fuera del rango [min, max]
+        public int EliminarFueraDeRango(int min, int max)
+        {
+            int eliminados = 0;
+
+            // 1) Eliminar desde el inicio mientras la cabeza esté fuera de rango
+            while (cabeza != null && (cabeza.Dato < min || cabeza.Dato > max))
+            {
+                cabeza = cabeza.Siguiente;
+                eliminados++;
+            }
+
+            // 2) Eliminar en el resto de la lista
+            Nodo actual = cabeza;
+            while (actual != null && actual.Siguiente != null)
+            {
+                if (actual.Siguiente.Dato < min || actual.Siguiente.Dato > max)
+                {
+                    actual.Siguiente = actual.Siguiente.Siguiente;
+                    eliminados++;
+                }
+                else
+                {
+                    actual = actual.Siguiente;
+                }
+            }
+
+            return eliminados;
+        }
+    }
+
+    class Program
+    {
+        static int LeerEntero(string mensaje)
+        {
+            while (true)
+            {
+                Console.Write(mensaje);
+                string input = Console.ReadLine();
+
+                if (int.TryParse(input, out int valor))
+                    return valor;
+
+                Console.WriteLine("Entrada inválida. Ingrese un número entero.");
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            ListaEnlazada lista = new ListaEnlazada();
+            Random rnd = new Random();
+
+            // Crear lista con 50 números aleatorios entre 1 y 999
+            for (int i = 0; i < 50; i++)
+                lista.AgregarFinal(rnd.Next(1, 1000)); // 1000 es exclusivo
+
+            lista.Mostrar("Lista original (50 números aleatorios):");
+
+            // Leer rango desde teclado
+            int min = LeerEntero("Ingrese el valor mínimo del rango: ");
+            int max = LeerEntero("Ingrese el valor máximo del rango: ");
+
+            // Asegurar que min <= max
+            if (min > max)
+            {
+                int temp = min;
+                min = max;
+                max = temp;
+                Console.WriteLine($"Se ajustó el rango a: [{min}, {max}]");
+            }
+
+            int eliminados = lista.EliminarFueraDeRango(min, max);
+
+            Console.WriteLine($"Nodos eliminados por estar fuera del rango [{min}, {max}]: {eliminados}\n");
+            lista.Mostrar("Lista final (solo valores dentro del rango):");
+
+            Console.WriteLine("Presione una tecla para salir...");
+            Console.ReadKey();
+        }
+    }
+}
