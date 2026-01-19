@@ -1,0 +1,174 @@
+using System;
+
+namespace ListasPrimosArmstrong
+{
+    class Nodo
+    {
+        public int Dato;
+        public Nodo Siguiente;
+
+        public Nodo(int dato)
+        {
+            Dato = dato;
+            Siguiente = null;
+        }
+    }
+
+    class ListaEnlazada
+    {
+        private Nodo cabeza;
+
+        public int Contar()
+        {
+            int c = 0;
+            Nodo actual = cabeza;
+            while (actual != null)
+            {
+                c++;
+                actual = actual.Siguiente;
+            }
+            return c;
+        }
+
+        public void AgregarInicio(int dato)
+        {
+            Nodo nuevo = new Nodo(dato);
+            nuevo.Siguiente = cabeza;
+            cabeza = nuevo;
+        }
+
+        public void AgregarFinal(int dato)
+        {
+            Nodo nuevo = new Nodo(dato);
+
+            if (cabeza == null)
+            {
+                cabeza = nuevo;
+                return;
+            }
+
+            Nodo actual = cabeza;
+            while (actual.Siguiente != null)
+                actual = actual.Siguiente;
+
+            actual.Siguiente = nuevo;
+        }
+
+        public void Mostrar(string titulo)
+        {
+            Console.WriteLine(titulo);
+
+            if (cabeza == null)
+            {
+                Console.WriteLine("(lista vacía)\n");
+                return;
+            }
+
+            Nodo actual = cabeza;
+            while (actual != null)
+            {
+                Console.Write(actual.Dato + (actual.Siguiente != null ? " -> " : ""));
+                actual = actual.Siguiente;
+            }
+            Console.WriteLine("\n");
+        }
+    }
+
+    class Program
+    {
+        static int LeerEntero(string mensaje)
+        {
+            while (true)
+            {
+                Console.Write(mensaje);
+                if (int.TryParse(Console.ReadLine(), out int valor))
+                    return valor;
+
+                Console.WriteLine("Entrada inválida. Intente nuevamente.");
+            }
+        }
+
+        static bool EsPrimo(int n)
+        {
+            if (n < 2) return false;
+            if (n == 2) return true;
+            if (n % 2 == 0) return false;
+
+            int limite = (int)Math.Sqrt(n);
+            for (int i = 3; i <= limite; i += 2)
+                if (n % i == 0) return false;
+
+            return true;
+        }
+
+        // Armstrong (narcisista): suma de (digito ^ cantidadDigitos) == numero
+        static bool EsArmstrong(int n)
+        {
+            if (n < 0) return false;
+
+            int temp = n;
+            int digitos = (n == 0) ? 1 : 0;
+            while (temp > 0)
+            {
+                digitos++;
+                temp /= 10;
+            }
+
+            temp = n;
+            int suma = 0;
+            while (temp > 0)
+            {
+                int d = temp % 10;
+                suma += (int)Math.Pow(d, digitos);
+                temp /= 10;
+            }
+
+            // Caso n=0: suma queda 0, también es Armstrong
+            return suma == n;
+        }
+
+        static void Main(string[] args)
+        {
+            ListaEnlazada listaPrimos = new ListaEnlazada();      // inserta al FINAL
+            ListaEnlazada listaArmstrong = new ListaEnlazada();   // inserta al INICIO
+
+            int n = LeerEntero("¿Cuántos números enteros desea ingresar?: ");
+
+            for (int i = 1; i <= n; i++)
+            {
+                int valor = LeerEntero($"Ingrese el número #{i}: ");
+
+                if (EsPrimo(valor))
+                    listaPrimos.AgregarFinal(valor);
+
+                if (EsArmstrong(valor))
+                    listaArmstrong.AgregarInicio(valor);
+            }
+
+            // a) número de datos insertados
+            int cantPrimos = listaPrimos.Contar();
+            int cantArmstrong = listaArmstrong.Contar();
+
+            Console.WriteLine("\nRESULTADOS");
+            Console.WriteLine($"a) Cantidad en lista de primos: {cantPrimos}");
+            Console.WriteLine($"   Cantidad en lista de Armstrong: {cantArmstrong}");
+
+            // b) lista con más elementos
+            Console.Write("b) ");
+            if (cantPrimos > cantArmstrong)
+                Console.WriteLine("La lista de PRIMOS contiene más elementos.");
+            else if (cantArmstrong > cantPrimos)
+                Console.WriteLine("La lista de ARMSTRONG contiene más elementos.");
+            else
+                Console.WriteLine("Ambas listas contienen la misma cantidad de elementos.");
+
+            // c) mostrar datos
+            Console.WriteLine("\nc) Datos almacenados:");
+            listaPrimos.Mostrar("Lista de PRIMOS (insertados al final):");
+            listaArmstrong.Mostrar("Lista de ARMSTRONG (insertados al inicio):");
+
+            Console.WriteLine("Presione una tecla para salir...");
+            Console.ReadKey();
+        }
+    }
+}
