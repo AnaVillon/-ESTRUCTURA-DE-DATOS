@@ -1,0 +1,47 @@
+using System;
+using System.Collections.Generic;
+
+class BalanceChecker
+{
+    static void Main()
+    {
+        Console.WriteLine("Ingrese una expresión matemática:");
+        string input = Console.ReadLine() ?? "";
+
+        bool ok = EstaBalanceada(input);
+
+        Console.WriteLine(ok ? "Fórmula balanceada." : "Fórmula NO balanceada.");
+    }
+
+    static bool EstaBalanceada(string expresion)
+    {
+        Stack<char> pila = new Stack<char>();
+
+        foreach (char c in expresion)
+        {
+            if (EsApertura(c))
+            {
+                pila.Push(c);
+            }
+            else if (EsCierre(c))
+            {
+                if (pila.Count == 0) return false;
+
+                char top = pila.Pop();
+                if (!Coinciden(top, c)) return false;
+            }
+        }
+
+        return pila.Count == 0;
+    }
+
+    static bool EsApertura(char c) => c == '(' || c == '{' || c == '[';
+    static bool EsCierre(char c) => c == ')' || c == '}' || c == ']';
+
+    static bool Coinciden(char apertura, char cierre)
+    {
+        return (apertura == '(' && cierre == ')') ||
+               (apertura == '{' && cierre == '}') ||
+               (apertura == '[' && cierre == ']');
+    }
+}
