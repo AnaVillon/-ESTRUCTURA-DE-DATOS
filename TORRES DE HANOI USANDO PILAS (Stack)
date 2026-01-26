@@ -1,0 +1,80 @@
+using System;
+using System.Collections.Generic;
+
+class HanoiConPilas
+{
+    static int pasos = 0;
+
+    static void Main()
+    {
+        Console.Write("Ingrese el número de discos: ");
+        if (!int.TryParse(Console.ReadLine(), out int n) || n <= 0)
+        {
+            Console.WriteLine("Ingrese un número válido mayor que 0.");
+            return;
+        }
+
+        Stack<int> A = new Stack<int>();
+        Stack<int> B = new Stack<int>();
+        Stack<int> C = new Stack<int>();
+
+        for (int i = n; i >= 1; i--) A.Push(i);
+
+        Console.WriteLine("\nEstado inicial:");
+        ImprimirTorres(A, B, C);
+
+        ResolverHanoi(n, A, C, B, "A", "C", "B", A, B, C);
+
+        Console.WriteLine($"\nTotal de pasos: {pasos}");
+    }
+
+    static void ResolverHanoi(int n,
+        Stack<int> origen, Stack<int> destino, Stack<int> auxiliar,
+        string nombreOrigen, string nombreDestino, string nombreAuxiliar,
+        Stack<int> A, Stack<int> B, Stack<int> C)
+    {
+        if (n == 1)
+        {
+            MoverDisco(origen, destino, nombreOrigen, nombreDestino);
+            ImprimirTorres(A, B, C);
+            return;
+        }
+
+        ResolverHanoi(n - 1, origen, auxiliar, destino, nombreOrigen, nombreAuxiliar, nombreDestino, A, B, C);
+
+        MoverDisco(origen, destino, nombreOrigen, nombreDestino);
+        ImprimirTorres(A, B, C);
+
+        ResolverHanoi(n - 1, auxiliar, destino, origen, nombreAuxiliar, nombreDestino, nombreOrigen, A, B, C);
+    }
+
+    static void MoverDisco(Stack<int> desde, Stack<int> hacia, string nDesde, string nHacia)
+    {
+        if (desde.Count == 0)
+            throw new InvalidOperationException("Movimiento inválido: torre origen vacía.");
+
+        int disco = desde.Peek();
+
+        if (hacia.Count > 0 && hacia.Peek() < disco)
+            throw new InvalidOperationException("Movimiento inválido: disco grande sobre disco pequeño.");
+
+        desde.Pop();
+        hacia.Push(disco);
+
+        pasos++;
+        Console.WriteLine($"\nPaso {pasos}: Mover disco {disco} de {nDesde} -> {nHacia}");
+    }
+
+    static void ImprimirTorres(Stack<int> A, Stack<int> B, Stack<int> C)
+    {
+        Console.WriteLine($"Torre A (top->bottom): {Formatear(A)}");
+        Console.WriteLine($"Torre B (top->bottom): {Formatear(B)}");
+        Console.WriteLine($"Torre C (top->bottom): {Formatear(C)}");
+    }
+
+    static string Formatear(Stack<int> torre)
+    {
+        int[] arr = torre.ToArray(); // top -> bottom
+        return arr.Length == 0 ? "[]" : "[" + string.Join(", ", arr) + "]";
+    }
+}
