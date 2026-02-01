@@ -1,0 +1,203 @@
+// ============================================================
+// UNIVERSIDAD ESTATAL AMAZÓNICA
+// Asignatura: Estructura de Datos
+// Práctica #02 – Estructuras Lineales
+// Sistema: Asignación de 100 asientos de auditorio
+// Lenguaje: C# (Consola) – Programación Orientada a Objetos
+// ============================================================
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+namespace AuditorioUEA
+{
+    // Clase que representa a un asistente
+    public class Asistente
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; }
+        public string Registrador { get; set; }
+        public DateTime HoraLlegada { get; set; }
+
+        public Asistente(int id, string nombre, string registrador)
+        {
+            Id = id;
+            Nombre = nombre;
+            Registrador = registrador;
+            HoraLlegada = DateTime.Now;
+        }
+
+        public override string ToString()
+        {
+            return $"[{Id:000}] {Nombre} | Registrado por: {Registrador} | Hora: {HoraLlegada:HH:mm:ss}";
+        }
+    }
+
+    // Clase que gestiona el auditorio y la cola
+    public class Auditorio
+    {
+        private Queue<Asistente> cola;
+        public int Capacidad { get; }
+        public int AsientosAsignados { get; private set; }
+
+        public Auditorio(int capacidad)
+        {
+            Capacidad = capacidad;
+            AsientosAsignados = 0;
+            cola = new Queue<Asistente>();
+        }
+
+        public int CuposDisponibles()
+        {
+            return Capacidad - AsientosAsignados;
+        }
+
+        public void RegistrarAsistente(Asistente asistente)
+        {
+            cola.Enqueue(asistente);
+        }
+
+        public Asistente VerSiguiente()
+        {
+            return cola.Count > 0 ? cola.Peek() : null;
+        }
+
+        public Asistente AsignarAsiento()
+        {
+            if (cola.Count == 0 || AsientosAsignados >= Capacidad)
+                return null;
+
+            AsientosAsignados++;
+            return cola.Dequeue();
+        }
+
+        public Queue<Asistente> ObtenerCola()
+        {
+            return cola;
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Auditorio auditorio = new Auditorio(100);
+            int contadorId = 1;
+            Stopwatch stopwatch = new Stopwatch();
+            bool salir = false;
+
+            while (!salir)
+            {
+                Console.WriteLine("\n===== MENÚ PRINCIPAL =====");
+                Console.WriteLine("1. Registrar asistente (Registrador A)");
+                Console.WriteLine("2. Registrar asistente (Registrador B)");
+                Console.WriteLine("3. Ver siguiente en la cola");
+                Console.WriteLine("4. Asignar asiento");
+                Console.WriteLine("5. Mostrar cola de espera");
+                Console.WriteLine("6. Estado del auditorio");
+                Console.WriteLine("0. Salir");
+                Console.Write("Seleccione una opción: ");
+                string opcion = Console.ReadLine();
+
+                switch (opcion)
+                {
+                    case "1":
+                        Registrar(auditorio, ref contadorId, "Registrador A", stopwatch);
+                        break;
+
+                    case "2":
+                        Registrar(auditorio, ref contadorId, "Registrador B", stopwatch);
+                        break;
+
+                    case "3":
+                        Asistente siguiente = auditorio.VerSiguiente();
+                        Console.WriteLine(siguiente != null
+                            ? "Siguiente en la cola: " + siguiente
+                            : "No hay asistentes en espera.");
+                        break;
+
+                    case "4":
+                        stopwatch.Start();
+                        Asistente asignado = auditorio.AsignarAsiento();
+                        stopwatch.Stop();
+
+                        if (asignado != null)
+                        {
+                            Console.WriteLine($"Asiento asignado correctamente a: {asignado}");
+                            Console.WriteLine($"Tiempo de ejecución: {stopwatch.ElapsedTicks} ticks");
+                        }
+                        else
+                        {
+                            Console.WriteLine("No se pudo asignar asiento (cola vacía o auditorio lleno).");
+                        }
+                        stopwatch.Reset();
+                        break;
+
+                    case "5":
+                        Console.WriteLine("----- COLA DE ESPERA -----");
+                        if (auditorio.ObtenerCola().Count == 0)
+                        {
+                            Console.WriteLine("No hay asistentes en espera.");
+                        }
+                        else
+                        {
+                            foreach (var a in auditorio.ObtenerCola())
+                            {
+                                Console.WriteLine(a);
+                            }
+                        }
+                        break;
+
+                    case "6":
+                        Console.WriteLine($"Capacidad total: 100");
+                        Console.WriteLine($"Asientos asignados: {auditorio.AsientosAsignados}");
+                        Console.WriteLine($"Cupos disponibles: {auditorio.CuposDisponibles()}");
+                        Console.WriteLine($"Asistentes en cola: {auditorio.ObtenerCola().Count}");
+                        break;
+
+                    case "0":
+                        salir = true;
+                        break;
+
+                    default:
+                        Console.WriteLine("Opción no válida.");
+                        break;
+                }
+            }
+
+            Console.WriteLine("Programa finalizado.");
+        }
+
+        static void Registrar(Auditorio auditorio, ref int contadorId, string registrador, Stopwatch stopwatch)
+        {
+            if (auditorio.AsientosAsignados >= auditorio.Capacidad)
+            {
+                Console.WriteLine("Auditorio lleno. No se pueden registrar más asistentes.");
+                return;
+            }
+
+            Console.Write("Ingrese nombre del asistente: ");
+            string nombre = Console.ReadLine();
+
+            stopwatch.Start();
+            auditorio.RegistrarAsistente(new Asistente(contadorId++, nombre, registrador));
+            stopwatch.Stop();
+
+            Console.WriteLine("Asistente registrado correctamente.");
+            Console.WriteLine($"Tiempo de ejecución: {stopwatch.ElapsedTicks} ticks");
+            stopwatch.Reset();
+        }
+    }
+}
+
+// ============================================================
+// DECLARACIÓN DE USO DE INTELIGENCIA ARTIFICIAL
+// Agente utilizado: ChatGPT
+// Uso: La herramienta fue empleada únicamente como apoyo para
+// verificar y corregir errores que aparecieron durante la
+// ejecución del programa (errores de sintaxis, lógica y flujo).
+// El código fue desarrollado, comprendido y ajustado por el
+// estudiante en su totalidad.
+// Porcentaje aproximado de uso de IA: Bajo (solo verificación).
+// ============================================================
